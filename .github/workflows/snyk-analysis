@@ -1,0 +1,39 @@
+name: Snyk Dependency Vulnerability Scan
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  snyk:
+    name: Snyk SCA Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
+      - name: Run Snyk to check for vulnerabilities
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          snyk test --json > snyk-report.json || echo "Snyk found vulnerabilities"
+
+      - name: Upload Snyk JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-vulnerability-report
+          path: snyk-report.json
