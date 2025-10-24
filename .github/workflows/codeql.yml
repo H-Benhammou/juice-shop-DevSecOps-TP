@@ -1,0 +1,52 @@
+name: CodeQL Analysis
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  analyze:
+    name: Analyze (CodeQL)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]  # CodeQL analysera JS/TS
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Build project (optional)
+        run: |
+          npm install
+          npm run build || echo "No build step"
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+          output: ./codeql-results
+
+      - name: Generate HTML report
+        run: |
+          mkdir -p codeql-report
+          npx @github/codeql-report generate ./codeql-results --format html --output codeql-report/report.html || echo "Use GHAS UI if tool not available"
+        
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-html-report
+          path: codeql-report/
